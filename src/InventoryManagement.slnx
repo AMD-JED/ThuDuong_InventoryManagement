@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="InventoryManagement.Console/InventoryManagement.Console.csproj" />
+  <Project Path="InventoryManagement.Core/InventoryManagement.Core.csproj" />
+  <Project Path="InventoryManagement.Data/InventoryManagement.Data.csproj" />
+  <Project Path="InventoryManagement.Services/InventoryManagement.Services.csproj" />
+</Solution>
