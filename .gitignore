@@ -1,0 +1,42 @@
+## .NET / C#
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## SQLite database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+## IDE
+.vs/
+.vscode/
+*.swp
+.idea/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Build Results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+bld/
+
+## NuGet
+packages/
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Misc
+*.log
+*.cache
