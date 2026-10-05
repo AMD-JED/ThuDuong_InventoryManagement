@@ -40,3 +40,11 @@ packages/
 ## Misc
 *.log
 *.cache
+
+bin/
+obj/
+.vs/
+*.user
+*.db
+custom_columns.json
+backups/
