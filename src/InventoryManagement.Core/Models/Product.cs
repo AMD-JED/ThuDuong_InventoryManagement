@@ -1,55 +1,34 @@
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema; // أضف هذه المكتبة
 
-namespace InventoryManagement.Core.Models;
-
-/// <summary>
-/// Represents a product tracked in the inventory system.
-/// </summary>
-public class Product
+namespace InventoryManagement.Core.Models
 {
-    /// <summary>Unique identifier for the product.</summary>
-    public int Id { get; set; }
+    public class Product
+    {
+        public int Id { get; set; }
+        public string? SKU { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? Category { get; set; }
+        public decimal UnitPrice { get; set; }
+        public int ReorderPoint { get; set; }
+        public int ReorderQuantity { get; set; }
+        
+        public int? SupplierId { get; set; }
+        public Supplier? Supplier { get; set; }
+        public bool IsActive { get; set; } = true;
 
-    /// <summary>Stock Keeping Unit — unique alphanumeric code for the product.</summary>
-    [Required, MaxLength(50)]
-    public string SKU { get; set; } = string.Empty;
+        public ICollection<InventoryItem>? InventoryItems { get; set; }
+        public ICollection<StockTransaction>? Transactions { get; set; }
 
-    /// <summary>Display name of the product.</summary>
-    [Required, MaxLength(200)]
-    public string Name { get; set; } = string.Empty;
+        // خصائص إكسل الخاصة بقطع الغيار
+        public string? Marque { get; set; }
+        public string? Emplacement { get; set; }
+        public string? Etat { get; set; }
+        public decimal PurchasePrice { get; set; }
 
-    /// <summary>Detailed description of the product.</summary>
-    [MaxLength(1000)]
-    public string Description { get; set; } = string.Empty;
-
-    /// <summary>Product category for grouping and filtering.</summary>
-    [Required, MaxLength(100)]
-    public string Category { get; set; } = string.Empty;
-
-    /// <summary>Unit price in USD.</summary>
-    [Range(0.01, double.MaxValue)]
-    public decimal UnitPrice { get; set; }
-
-    /// <summary>Minimum stock threshold that triggers a reorder alert.</summary>
-    public int ReorderPoint { get; set; } = 10;
-
-    /// <summary>Optimal quantity to reorder when stock falls below reorder point.</summary>
-    public int ReorderQuantity { get; set; } = 50;
-
-    /// <summary>Date the product was added to the system.</summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>Whether this product is actively tracked.</summary>
-    public bool IsActive { get; set; } = true;
-
-    // Navigation properties
-    /// <summary>Supplier providing this product.</summary>
-    public int? SupplierId { get; set; }
-    public Supplier? Supplier { get; set; }
-
-    /// <summary>Inventory records across all warehouses.</summary>
-    public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
-
-    /// <summary>Transaction history for this product.</summary>
-    public ICollection<StockTransaction> Transactions { get; set; } = new List<StockTransaction>();
+        // ⭐ هذا هو الحل: إضافة NotMapped لكي يتجاهلها قاعدة البيانات
+        [NotMapped]
+        public Dictionary<string, string> CustomAttributes { get; set; } = new Dictionary<string, string>();
+    }
 }
