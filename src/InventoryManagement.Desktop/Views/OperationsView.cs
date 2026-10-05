@@ -99,7 +99,7 @@ namespace InventoryManagement.Desktop
             {
                 if (e.RowIndex < 0 || _grid.Columns[e.ColumnIndex].DataPropertyName != nameof(TxRow.Quantite)) return;
                 if (_grid.Rows[e.RowIndex].DataBoundItem is TxRow t)
-                    e.CellStyle.ForeColor = t.Quantite < 0 ? Color.FromArgb(255, 120, 110) : Color.FromArgb(110, 215, 150);
+                    e.CellStyle.ForeColor = t.Quantite < 0 ? Theme.BadText : Theme.GoodText;
             };
 
             Controls.Add(_grid);
@@ -190,7 +190,7 @@ namespace InventoryManagement.Desktop
             }
         }
 
-        private static string TypeLabel(Core.Enums.TransactionType t) => t switch
+        public static string TypeLabel(Core.Enums.TransactionType t) => t switch
         {
             Core.Enums.TransactionType.Received => "Réception",
             Core.Enums.TransactionType.Shipped => "Sortie",

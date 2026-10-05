@@ -11,6 +11,8 @@ namespace InventoryManagement.Desktop
         private readonly TextBox _search = new();
         private readonly ComboBox _fArmoire = new(), _fMarque = new(), _fEtat = new();
         private readonly Label _status = new();
+        private readonly ProductDetailPanel _detail;
+        private readonly System.Windows.Forms.Timer _detailTimer = new() { Interval = 150 };
         private List<ProductRow> _all = new();
         private List<ProductRow> _view = new();
         private string? _sortProp;
@@ -23,6 +25,13 @@ namespace InventoryManagement.Desktop
         {
             Dock = DockStyle.Fill;
             BackColor = Theme.Bg;
+
+            _detail = new ProductDetailPanel(_store) { Dock = DockStyle.Right };
+            _detailTimer.Tick += (_, _) =>
+            {
+                _detailTimer.Stop();
+                if (_detail.Visible) _detail.ShowFor(Selected());
+            };
 
             // ----- grid -----
             Theme.StyleGrid(_grid);
@@ -38,6 +47,7 @@ namespace InventoryManagement.Desktop
             _grid.Columns.Add(Theme.Col("Prix Achat", nameof(ProductRow.PurchasePrice), 75, "N2", true));
             _grid.Columns.Add(Theme.Col("Prix Vente", nameof(ProductRow.UnitPrice), 75, "N2", true));
             _grid.CellFormatting += Grid_CellFormatting;
+            _grid.SelectionChanged += (_, _) => { _detailTimer.Stop(); _detailTimer.Start(); };
             _grid.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) EditSelected(); };
             _grid.ColumnHeaderMouseClick += Grid_HeaderClick;
             _grid.KeyDown += (_, e) => { if (e.KeyCode == Keys.Delete) { DeleteSelected(); e.Handled = true; } };
@@ -84,7 +94,8 @@ namespace InventoryManagement.Desktop
 
             var actions = new FlowLayoutPanel
             {
-                Dock = DockStyle.Top, Height = 48, Padding = new Padding(0, 6, 0, 0), WrapContents = false
+                Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                MinimumSize = new Size(0, 48), Padding = new Padding(0, 6, 0, 4), WrapContents = true
             };
             actions.Controls.Add(Theme.MakeButton("➕ Ajouter", Theme.Good, (_, _) => AddProduct(), 110));
             actions.Controls.Add(Theme.MakeButton("✏️ Modifier", Theme.Accent, (_, _) => EditSelected(), 110));
@@ -94,6 +105,8 @@ namespace InventoryManagement.Desktop
             actions.Controls.Add(Theme.MakeButton("➕ Colonne", Theme.Neutral, (_, _) => AddColumn(), 110));
             actions.Controls.Add(Theme.MakeButton("➖ Colonne", Theme.Neutral, (_, _) => RemoveColumn(), 110));
             actions.Controls.Add(Theme.MakeButton("📤 Export CSV", Theme.Neutral, (_, _) => ExportCsv(), 125));
+            actions.Controls.Add(Theme.MakeButton("📥 Import CSV", Theme.Neutral, (_, _) => ImportCsv(), 125));
+            actions.Controls.Add(Theme.MakeButton("ℹ Détails", Theme.Neutral, (_, _) => ToggleDetails(), 105));
 
             var header = Theme.MakeLabel("📦 Gestion des pièces", Theme.Title, Color.White);
             header.AutoSize = false;
@@ -103,6 +116,7 @@ namespace InventoryManagement.Desktop
             // Fill control first, then docked ones (last added = outermost).
             Controls.Add(_grid);
             Controls.Add(_status);
+            Controls.Add(_detail);
             Controls.Add(filters);
             Controls.Add(actions);
             Controls.Add(header);
@@ -269,9 +283,9 @@ namespace InventoryManagement.Desktop
             if (col.DataPropertyName == nameof(ProductRow.Etat))
             {
                 if (r.Etat.Equals("CASSE", StringComparison.OrdinalIgnoreCase))
-                    e.CellStyle.ForeColor = Color.FromArgb(255, 120, 110);
+                    e.CellStyle.ForeColor = Theme.BadText;
                 else if (r.Etat.Equals("OUVERT", StringComparison.OrdinalIgnoreCase))
-                    e.CellStyle.ForeColor = Color.FromArgb(110, 215, 150);
+                    e.CellStyle.ForeColor = Theme.GoodText;
             }
             else if (col.DataPropertyName == nameof(ProductRow.Stock))
             {
@@ -442,6 +456,92 @@ namespace InventoryManagement.Desktop
             catch (Exception ex)
             {
                 MessageBox.Show(this, "Export impossible : " + ex.Message, "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ToggleDetails()
+        {
+            _detail.Visible = !_detail.Visible;
+            if (_detail.Visible) _detail.ShowFor(Selected());
+        }
+
+        private async void ImportCsv()
+        {
+            using var dlg = new OpenFileDialog
+            {
+                Filter = "Fichiers CSV (Excel)|*.csv;*.txt|Tous les fichiers|*.*",
+                Title = "Importer des pièces depuis un fichier CSV"
+            };
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+            ImportPlan plan;
+            try { plan = CsvImporter.Parse(dlg.FileName); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Lecture impossible : " + ex.Message, "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            if (plan.Rows.Count == 0)
+            {
+                MessageBox.Show(this, "Aucune ligne importable.\n\n" + string.Join("\n", plan.Errors.Take(10)),
+                    "Import CSV", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // stock column present -> which warehouse receives these quantities?
+            int warehouseId = 0;
+            string whName = "";
+            if (plan.HasStock)
+            {
+                List<Named> whs;
+                using (var c = Db.Create())
+                    whs = c.Warehouses.Where(w => w.IsActive).ToList().OrderBy(w => w.Name)
+                            .Select(w => new Named(w.Id, w.Name)).ToList();
+                if (whs.Count == 0) { Info("Aucun dépôt actif : créez un dépôt avant d'importer des quantités."); return; }
+                Named chosen = whs[0];
+                if (whs.Count > 1)
+                {
+                    var v = FormDialog.Ask(FindForm()!, "Dépôt des quantités importées",
+                        new[] { new DialogField("Dépôt", whs[0].Text, whs.Select(w => w.Text).ToArray()) },
+                        vals => whs.Any(w => w.Text == vals[0]) ? null : "Choisissez un dépôt de la liste.", "Continuer");
+                    if (v == null) return;
+                    chosen = whs.First(w => w.Text == v[0]);
+                }
+                warehouseId = chosen.Id;
+                whName = chosen.Text;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Nouvelles pièces : {plan.NewCount}");
+            sb.AppendLine($"Pièces mises à jour (même SKU) : {plan.UpdateCount}");
+            if (plan.HasStock) sb.AppendLine($"Quantités : fixées dans « {whName} » (ajustement, avec historique)");
+            if (plan.ExtraColumns.Count > 0) sb.AppendLine("Colonnes personnalisées : " + string.Join(", ", plan.ExtraColumns));
+            if (plan.Errors.Count > 0)
+            {
+                sb.AppendLine($"\nLignes ignorées : {plan.Errors.Count}");
+                foreach (var e in plan.Errors.Take(8)) sb.AppendLine("  • " + e);
+                if (plan.Errors.Count > 8) sb.AppendLine("  • ...");
+            }
+            sb.AppendLine("\nSeules les colonnes présentes dans le fichier modifient les pièces existantes.");
+            sb.Append("Continuer l'import ?");
+            if (MessageBox.Show(this, sb.ToString(), "Import CSV", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+            try
+            {
+                UseWaitCursor = true;
+                var res = await CsvImporter.ApplyAsync(plan, warehouseId, _store);
+                UseWaitCursor = false;
+                RefreshData();
+                DataChanged?.Invoke();
+                Info($"Import terminé : {res.Created} créée(s), {res.Updated} mise(s) à jour, {res.StockSet} stock(s) ajusté(s).");
+            }
+            catch (Exception ex)
+            {
+                UseWaitCursor = false;
+                MessageBox.Show(this, "Import annulé (aucune modification enregistrée) : " + ex.Message, "Erreur",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

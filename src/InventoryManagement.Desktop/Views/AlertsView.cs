@@ -38,7 +38,7 @@ namespace InventoryManagement.Desktop
             {
                 if (e.RowIndex < 0 || _grid.Columns[e.ColumnIndex].DataPropertyName != nameof(AlertRow.Niveau)) return;
                 if (_grid.Rows[e.RowIndex].DataBoundItem is AlertRow r)
-                    e.CellStyle.ForeColor = r.Niveau == "Critique" ? Color.FromArgb(255, 120, 110) : Theme.Warn;
+                    e.CellStyle.ForeColor = r.Niveau == "Critique" ? Theme.BadText : Theme.Warn;
             };
 
             _info.AutoSize = false; _info.Dock = DockStyle.Top; _info.Height = 30;

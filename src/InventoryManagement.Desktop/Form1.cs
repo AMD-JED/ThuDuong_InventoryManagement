@@ -13,6 +13,7 @@ namespace InventoryManagement.Desktop
         private OperationsView? _operations;
         private DashboardView? _dashboard;
         private AlertsView? _alerts;
+        private BackupView? _backup;
         private Control? _current;
         private Button? _activeBtn;
         private Button _btnAlerts = null!;
@@ -64,6 +65,7 @@ namespace InventoryManagement.Desktop
             AddMenu("[4]  📈  KPI Dashboard", 244, () => Navigate(Dashboard()));
             _btnAlerts = AddMenu("[5]  🔔  Reorder Alerts", 292, () => Navigate(Alerts()));
             AddMenu("[6]  🔍  Search & Filter", 340, () => { ShowProducts(); _products!.FocusSearch(); });
+            AddMenu("[7]  💾  Backup / Restore", 388, () => Navigate(Backup()));
 
             _footer.Text = "DB : " + Db.File + "\nCtrl+F recherche • Ctrl+N ajouter\nF5 actualiser";
             _tip.SetToolTip(_footer, Db.FullPath);
@@ -95,7 +97,7 @@ namespace InventoryManagement.Desktop
                 UseVisualStyleBackColor = false
             };
             b.FlatAppearance.BorderSize = 0;
-            b.FlatAppearance.MouseOverBackColor = Color.FromArgb(55, 55, 60);
+            b.FlatAppearance.MouseOverBackColor = Theme.Hover;
             b.Click += (_, _) => { SetActive(b); onClick(); };
             _sidebar.Controls.Add(b);
             _menu.Add((b, text));
@@ -110,7 +112,7 @@ namespace InventoryManagement.Desktop
                 _activeBtn.ForeColor = Theme.Text;
             }
             _activeBtn = b;
-            b.BackColor = Color.FromArgb(0, 105, 130);
+            b.BackColor = Theme.SelectBg;
             b.ForeColor = Color.White;
         }
 
@@ -136,6 +138,19 @@ namespace InventoryManagement.Desktop
         }
         private DashboardView Dashboard() => _dashboard ??= new DashboardView();
         private AlertsView Alerts() => _alerts ??= new AlertsView();
+        private BackupView Backup()
+        {
+            if (_backup == null) { _backup = new BackupView(); _backup.Restored += RefreshAll; }
+            return _backup;
+        }
+
+        /// <summary>After a restore every screen must re-read the database.</summary>
+        private void RefreshAll()
+        {
+            foreach (var v in new IRefreshable?[] { _products, _warehouses, _operations, _dashboard, _alerts })
+                v?.RefreshData();
+            UpdateBadge();
+        }
 
         private void OnDataChanged() => UpdateBadge();
 

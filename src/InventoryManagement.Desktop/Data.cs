@@ -102,12 +102,14 @@ namespace InventoryManagement.Desktop
             public Dictionary<string, Dictionary<string, string>> Values { get; set; } = new();
         }
 
-        private readonly string _path;
+        public static string FilePath =>
+            Path.Combine(Path.GetDirectoryName(Db.FullPath) ?? ".", "custom_columns.json");
+
+        private readonly string _path = FilePath;
         private Model _m = new();
 
         public CustomColumnStore()
         {
-            _path = Path.Combine(Path.GetDirectoryName(Db.FullPath) ?? ".", "custom_columns.json");
             Load();
         }
 
@@ -155,6 +157,18 @@ namespace InventoryManagement.Desktop
             var clean = values.Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
                               .ToDictionary(kv => kv.Key, kv => kv.Value);
             if (clean.Count == 0) _m.Values.Remove(sku); else _m.Values[sku] = clean;
+            Save();
+        }
+
+        /// <summary>Adds/overwrites the given values per SKU and saves once.</summary>
+        public void MergeValues(Dictionary<string, Dictionary<string, string>> bySku)
+        {
+            if (bySku.Count == 0) return;
+            foreach (var (sku, vals) in bySku)
+            {
+                if (!_m.Values.TryGetValue(sku, out var cur)) _m.Values[sku] = cur = new Dictionary<string, string>();
+                foreach (var kv in vals) cur[kv.Key] = kv.Value;
+            }
             Save();
         }
 

@@ -3,18 +3,25 @@ namespace InventoryManagement.Desktop
     /// <summary>Colors, fonts and small style helpers shared by all screens.</summary>
     public static class Theme
     {
-        public static readonly Color Bg = Color.FromArgb(30, 30, 30);
-        public static readonly Color Sidebar = Color.FromArgb(37, 37, 38);
-        public static readonly Color Card = Color.FromArgb(45, 45, 48);
-        public static readonly Color Input = Color.FromArgb(60, 60, 64);
-        public static readonly Color Border = Color.FromArgb(70, 70, 76);
-        public static readonly Color Text = Color.Gainsboro;
-        public static readonly Color Muted = Color.FromArgb(150, 150, 155);
-        public static readonly Color Accent = Color.FromArgb(0, 184, 212);
-        public static readonly Color Good = Color.FromArgb(46, 139, 87);
-        public static readonly Color Danger = Color.FromArgb(198, 40, 40);
-        public static readonly Color Warn = Color.FromArgb(240, 160, 0);
-        public static readonly Color Neutral = Color.FromArgb(75, 75, 82);
+        // Palette: "01 · SaaS Analytics" design system (dark theme tokens).
+        public static readonly Color Bg = Color.FromArgb(10, 10, 15);          // --bg        #0a0a0f
+        public static readonly Color Sidebar = Color.FromArgb(6, 6, 9);        // --bg-dim    #060609
+        public static readonly Color Card = Color.FromArgb(17, 17, 24);        // --surface   #111118
+        public static readonly Color CardAlt = Color.FromArgb(24, 24, 31);     // --surface-mid  #18181f
+        public static readonly Color Header = Color.FromArgb(31, 31, 40);      // --surface-high #1f1f28
+        public static readonly Color Input = Color.FromArgb(31, 31, 40);       // --surface-high
+        public static readonly Color Border = Color.FromArgb(40, 40, 50);      // --surface-highest #282832
+        public static readonly Color Hover = Color.FromArgb(31, 31, 40);
+        public static readonly Color Text = Color.FromArgb(228, 228, 235);
+        public static readonly Color Muted = Color.FromArgb(139, 139, 153);
+        public static readonly Color Accent = Color.FromArgb(59, 130, 246);    // --primary   #3b82f6
+        public static readonly Color SelectBg = Color.FromArgb(30, 58, 138);   // primary, darkened for row selection
+        public static readonly Color Good = Color.FromArgb(22, 163, 74);       // --positive family (button bg, white text)
+        public static readonly Color Danger = Color.FromArgb(220, 38, 38);     // --error family (button bg, white text)
+        public static readonly Color Warn = Color.FromArgb(245, 158, 11);      // --tertiary  #f59e0b
+        public static readonly Color Neutral = Color.FromArgb(51, 51, 64);
+        public static readonly Color GoodText = Color.FromArgb(74, 222, 128);  // readable green on dark rows
+        public static readonly Color BadText = Color.FromArgb(248, 113, 113);  // readable red on dark rows
 
         public static readonly Font Base = new Font("Segoe UI", 10f);
         public static readonly Font Bold = new Font("Segoe UI Semibold", 10f);
@@ -83,19 +90,19 @@ namespace InventoryManagement.Desktop
 
             g.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             g.ColumnHeadersHeight = 38;
-            g.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(55, 55, 60);
+            g.ColumnHeadersDefaultCellStyle.BackColor = Header;
             g.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             g.ColumnHeadersDefaultCellStyle.Font = Bold;
-            g.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(55, 55, 60);
+            g.ColumnHeadersDefaultCellStyle.SelectionBackColor = Header;
             g.ColumnHeadersDefaultCellStyle.Padding = new Padding(6, 0, 0, 0);
 
             g.RowTemplate.Height = 32;
             g.DefaultCellStyle.BackColor = Card;
             g.DefaultCellStyle.ForeColor = Text;
-            g.DefaultCellStyle.SelectionBackColor = Color.FromArgb(0, 105, 130);
+            g.DefaultCellStyle.SelectionBackColor = SelectBg;
             g.DefaultCellStyle.SelectionForeColor = Color.White;
             g.DefaultCellStyle.Padding = new Padding(6, 0, 0, 0);
-            g.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(51, 51, 55);
+            g.AlternatingRowsDefaultCellStyle.BackColor = CardAlt;
         }
 
         public static DataGridViewTextBoxColumn Col(string header, string prop, float weight = 100,
