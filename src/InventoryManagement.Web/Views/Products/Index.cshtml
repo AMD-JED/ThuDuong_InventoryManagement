@@ -1,0 +1,106 @@
+@model IEnumerable<InventoryManagement.Core.Models.Product>
+
+@{
+    ViewData["Title"] = "Gestion de Stock - Pièces Auto";
+}
+
+<div class="container-fluid mt-4">
+    <h2>🚗 Gestion de Stock - Armoires & Pièces</h2>
+    <p class="text-muted">Système de Suivi Multi-Emplacement (Inspiré d'Excel)</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    
+
+    <!-- زر إضافة عمود جديد -->
+    <div class="mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addColumnModal">
+            ➕ Ajouter un nouveau colonne (تصنيف عمود جديد)
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered table-hover mt-2">
+            <thead class="table-dark">
+                <tr>
+                    <th>Référence (SKU)</th>
+                    <th>Désignation Article</th>
+                    <th>Armoire / Catégorie</th>
+                    <th>Marque</th>
+                    <th>Emplacement</th>
+                    <th>État</th>
+                    <th>Prix Achat</th>
+                    <th>Prix Vente</th>
+                    <th>Qte</th>
+
+                    @if (ViewBag.CustomColumns != null)
+                    {
+                        foreach (var col in (List<string>)ViewBag.CustomColumns)
+                        {
+                            <th>@col (Personnalisé)</th>
+                        }
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><strong>@item.SKU</strong></td>
+                            <td>@item.Name</td>
+                            <td>@item.Category</td>
+                            <td><span class="badge bg-secondary">@item.Marque</span></td>
+                            <td><code>@item.Emplacement</code></td>
+                            <td>
+                                @if (item.Etat == "OUVERT")
+                                {
+                                    <span class="badge bg-success">OUVERT</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">CASSE</span>
+                                }
+                            </td>
+                            <td>$@item.PurchasePrice.ToString("N2")</td>
+                            <td>$@item.UnitPrice.ToString("N2")</td>
+                            <td><strong>1</strong></td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">Aucune pièce trouvée dans la base de données.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal لإضافة عمود جديد -->
+<div class="modal fade" id="addColumnModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/Products/AddCustomColumn">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un nouveau champ / colonne</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom du Colonne (اسم العمود الجديد)</label>
+                        <input type="text" class="form-control" name="columnName" required placeholder="Ex: Fournisseur, Remarque..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
